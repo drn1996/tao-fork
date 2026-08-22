@@ -104,7 +104,17 @@ extern "C" fn new(class: &Class, _: Sel) -> id {
     *(*this).get_mut_ivar(AUX_DELEGATE_STATE_NAME) =
       Box::into_raw(Box::new(RefCell::new(AuxDelegateState {
         activation_policy: ActivationPolicy::Regular,
-        activate_ignoring_other_apps: true,
+        // Upstream default is unconditionally `true`, which makes a launching
+        // app take focus from whatever the user is doing. In a debug build
+        // that is a dev loop relaunching the app on every code change, and it
+        // makes the machine unusable for anything else while you work.
+        //
+        // Release builds keep upstream behaviour exactly: launching an app the
+        // user just asked for should bring it to the front.
+        //
+        // `EventLoopExtMacOS::set_activate_ignoring_other_apps` still
+        // overrides this either way; it is only the default that changes.
+        activate_ignoring_other_apps: !cfg!(debug_assertions),
         dock_visibility: true,
         last_dock_show: Mutex::new(None),
       }))) as *mut c_void;
