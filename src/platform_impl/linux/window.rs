@@ -205,6 +205,24 @@ impl Window {
       }
     }
 
+    // A debug build is a dev loop relaunching the app on every code change,
+    // and each relaunch pulling the desktop away makes the machine unusable
+    // for anything else while you work.
+    //
+    // `accept_focus` is not the lever: `attributes.focused` defaults to true,
+    // so it is already on, and it governs whether a window may hold focus
+    // rather than whether mapping it should take focus. Focus-on-map is the
+    // hint a window manager reads at map time, and it is what upstream never
+    // sets.
+    //
+    // Release builds are untouched — an app the user just launched should
+    // come to the front. This mirrors the macOS side, where the same dev-loop
+    // problem is fixed by defaulting `activate_ignoring_other_apps` to
+    // `!cfg!(debug_assertions)`.
+    if cfg!(debug_assertions) {
+      window.set_focus_on_map(false);
+    }
+
     if attributes.visible {
       window.show_all();
     } else {
